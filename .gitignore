@@ -22,10 +22,10 @@ package-lock.json
 *.js
 
 # Generated outputs
-reports/
-REPORT.pdf
-*.pptx
-*.html
+# reports/
+# REPORT.pdf
+# *.pptx
+# *.html
 ~$*
 
 # Local tooling / config

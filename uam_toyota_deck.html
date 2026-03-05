@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAM Corridor Simulation — Toyota/TEMA Research 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ======================================================
+   CUSTOM PROPERTIES — change here to retheme everything
+   ====================================================== */
+:root {
+  --red:       #eb0a1e;
+  --red-dim:   rgba(235, 10, 30, 0.12);
+  --bg:        #0a0a0f;
+  --bg-card:   rgba(255,255,255,0.04);
+  --border:    rgba(255,255,255,0.08);
+  --text:      #d8d8e0;
+  --text-dim:  #70707a;
+  --text-hi:   #ffffff;
+  --green:     #34d399;
+  --amber:     #f59e0b;
+  --rose:      #f87171;
+  --blue:      #60a5fa;
+  --purple:    #a78bfa;
+  --stripe:    4px;
+
+  /* Typography — ALL clamp() required */
+  --f-giant:   clamp(2.8rem, 7vw, 6rem);
+  --f-h2:      clamp(1.4rem, 3vw, 2.4rem);
+  --f-h3:      clamp(1rem, 2vw, 1.5rem);
+  --f-body:    clamp(0.78rem, 1.3vw, 1rem);
+  --f-small:   clamp(0.68rem, 1.05vw, 0.85rem);
+  --f-label:   clamp(0.58rem, 0.85vw, 0.72rem);
+  --f-mono:    clamp(0.68rem, 1.1vw, 0.85rem);
+
+  /* Spacing — ALL clamp() required */
+  --pad:       clamp(1.5rem, 4vw, 4rem);
+  --gap:       clamp(0.7rem, 1.5vw, 1.4rem);
+  --gap-sm:    clamp(0.35rem, 0.7vw, 0.65rem);
+
+  /* Animation */
+  --ease:      cubic-bezier(0.16, 1, 0.3, 1);
+  --dur:       0.55s;
+}
+
+/* ======================================================
+   RESET + BASE
+   ====================================================== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  height: 100%;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* ======================================================
+   SLIDE CONTAINER — CRITICAL: 100vh, no scroll, ever
+   ====================================================== */
+.slide {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;       /* mobile dynamic viewport */
+  overflow: hidden;     /* NEVER allow scroll */
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: var(--pad);
+  padding-left: calc(var(--pad) + var(--stripe) + 1.5rem);
+  position: relative;
+}
+
+/* Red left accent stripe */
+.slide::before {
+  content: '';
+  position: absolute;
+  left: var(--pad);
+  top: 12%;
+  height: 76%;
+  width: var(--stripe);
+  background: var(--red);
+  border-radius: 2px;
+}
+
+/* Title slide: full-height stripe */
+.slide.s-title::before { top: 0; height: 100%; width: 6px; }
+
+/* ======================================================
+   SLIDE META (header row)
+   ====================================================== */
+.slide-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--gap-sm);
+}
+
+.section-label {
+  font-size: var(--f-label);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.slide-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--f-label);
+  color: var(--text-dim);
+}
+
+/* ======================================================
+   SLIDE CONTENT
+   ====================================================== */
+.slide-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  gap: var(--gap);
+}
+
+.slide-footer {
+  font-size: var(--f-label);
+  color: rgba(255,255,255,0.18);
+  padding-top: var(--gap-sm);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ======================================================
+   TYPOGRAPHY
+   ====================================================== */
+.giant {
+  font-size: var(--f-giant);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--text-hi);
+}
+.giant .red { color: var(--red); }
+
+h2 {
+  font-size: var(--f-h2);
+  font-weight: 800;
+  color: var(--text-hi);
+  line-height: 1.15;
+}
+
+h3 {
+  font-size: var(--f-h3);
+  font-weight: 700;
+  color: var(--text-hi);
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: var(--f-body);
+  color: var(--text-dim);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.divider {
+  width: clamp(2rem, 5vw, 4rem);
+  height: 2px;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+/* ======================================================
+   BULLET LISTS
+   ====================================================== */
+ul.b {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+ul.b li {
+  font-size: var(--f-body);
+  color: var(--text);
+  line-height: 1.55;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65em;
+}
+
+ul.b li::before {
+  content: '▸';
+  color: var(--red);
+  flex-shrink: 0;
+  margin-top: 0.07em;
+}
+
+ul.b li strong   { color: var(--text-hi); font-weight: 700; }
+ul.b li .ok      { color: var(--green); font-weight: 600; }
+ul.b li .warn    { color: var(--amber); font-weight: 600; }
+ul.b li .bad     { color: var(--rose);  font-weight: 600; }
+ul.b li .note    { color: var(--blue);  font-style: italic; }
+
+ul.b li code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: rgba(255,255,255,0.08);
+  padding: 0.08em 0.4em;
+  border-radius: 3px;
+  color: #4fc3f7;
+}
+
+/* ======================================================
+   CARDS / GRID
+   ====================================================== */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: var(--gap-sm);
+  overflow: hidden;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: clamp(0.65rem, 1.3vw, 1.1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow: hidden;
+}
+
+.card.hl   { border-color: rgba(235,10,30,0.4); }
+.card.hl2  { border-color: rgba(96,165,250,0.35); }
+
+.card-tag {
+  font-size: var(--f-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--red);
+}
+
+.card-tag.blue   { color: var(--blue); }
+.card-tag.green  { color: var(--green); }
+.card-tag.amber  { color: var(--amber); }
+.card-tag.purple { color: var(--purple); }
+
+.card h3 { font-size: var(--f-small); color: var(--text-hi); font-weight: 700; }
+
+.card p, .card ul.b li {
+  font-size: calc(var(--f-small) * 0.95);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ======================================================
+   TWO-COLUMN LAYOUT
+   ====================================================== */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  overflow: hidden;
+}
+
+.col-label {
+  font-size: var(--f-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  margin-bottom: var(--gap-sm);
+}
+
+/* ======================================================
+   DATA TABLES
+   ====================================================== */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--f-small);
+}
+
+.tbl th {
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  font-size: var(--f-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--red);
+  border-bottom: 1px solid var(--border);
+}
+
+.tbl td {
+  padding: 0.45rem 0.7rem;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.tbl td:first-child { color: var(--text-hi); font-weight: 600; }
+
+.tbl td code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  color: #4fc3f7;
+  background: rgba(255,255,255,0.06);
+  padding: 0.05em 0.35em;
+  border-radius: 3px;
+}
+
+/* ======================================================
+   BADGES
+   ====================================================== */
+.badge {
+  display: inline-block;
+  padding: 0.12em 0.55em;
+  border-radius: 999px;
+  font-size: var(--f-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.b-ok     { background: rgba(52,211,153,0.15);  color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+.b-warn   { background: rgba(245,158,11,0.15);  color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+.b-bad    { background: rgba(248,113,113,0.15); color: var(--rose);  border: 1px solid rgba(248,113,113,0.3); }
+.b-ai     { background: rgba(167,139,250,0.15); color: var(--purple);border: 1px solid rgba(167,139,250,0.3); }
+.b-lit    { background: rgba(96,165,250,0.15);  color: var(--blue);  border: 1px solid rgba(96,165,250,0.3); }
+.b-tbd    { background: rgba(156,163,175,0.1);  color: #9ca3af;      border: 1px solid rgba(156,163,175,0.2); }
+
+/* ======================================================
+   ARCHITECTURE FLOW DIAGRAM
+   ====================================================== */
+.arch-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+}
+
+.arch-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: clamp(0.5rem, 1.1vw, 0.9rem);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.arch-block.hl { border-color: rgba(235,10,30,0.45); }
+
+.arch-tag {
+  font-size: var(--f-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--red);
+}
+
+.arch-tag.blue   { color: var(--blue); }
+.arch-tag.green  { color: var(--green); }
+.arch-tag.amber  { color: var(--amber); }
+.arch-tag.purple { color: var(--purple); }
+
+.arch-title {
+  font-size: var(--f-small);
+  font-weight: 700;
+  color: var(--text-hi);
+  line-height: 1.3;
+}
+
+.arch-items span {
+  display: block;
+  font-size: calc(var(--f-small) * 0.88);
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}
+
+.arch-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(0.25rem, 0.6vw, 0.5rem);
+  color: var(--red);
+  font-size: clamp(0.75rem, 1.4vw, 1.1rem);
+  flex-shrink: 0;
+}
+
+/* ======================================================
+   KPI PIPELINE DIAGRAM
+   ====================================================== */
+.pipeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
+}
+
+.pipeline-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.p-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-size: var(--f-small);
+  color: var(--text);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.p-box.inp  { border-color: rgba(167,139,250,0.4); color: var(--purple); }
+.p-box.knob { border-color: rgba(96,165,250,0.4);  color: var(--blue); }
+.p-box.mid  { border-color: var(--border); color: var(--text-hi); }
+.p-box.safe { border-color: rgba(52,211,153,0.4);  color: var(--green); font-weight: 700; }
+.p-box.crit { border-color: rgba(248,113,113,0.4); color: var(--rose);  font-weight: 700; }
+
+.p-arrow { color: var(--text-dim); font-size: 0.8rem; flex-shrink: 0; }
+.p-down  { color: var(--text-dim); font-size: 0.75rem; line-height: 1; }
+.p-label { font-size: var(--f-label); color: var(--text-dim); font-style: italic; }
+
+/* ======================================================
+   SCOPE COLUMNS
+   ====================================================== */
+.scope-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+.scope-hdr {
+  font-size: var(--f-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  width: fit-content;
+  margin-bottom: var(--gap-sm);
+}
+
+.scope-hdr.in  { background: rgba(52,211,153,0.15);  color: var(--green); }
+.scope-hdr.out { background: rgba(156,163,175,0.1);  color: #9ca3af; }
+
+/* ======================================================
+   PHASE BAR (cascade scenario)
+   ====================================================== */
+.phase-bar {
+  display: flex;
+  gap: 2px;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 8px;
+}
+
+.ph { height: 8px; border-radius: 2px; }
+
+/* ======================================================
+   SCENARIO VERDICT
+   ====================================================== */
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: var(--f-small);
+  width: fit-content;
+  flex-shrink: 0;
+}
+
+.v-ok  { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.35); color: var(--green); }
+.v-bad { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.35); color: var(--rose); }
+
+/* ======================================================
+   FORMULA BLOCK
+   ====================================================== */
+.formula {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--f-mono);
+  color: #4fc3f7;
+  background: rgba(255,255,255,0.04);
+  border-left: 3px solid rgba(79,195,247,0.4);
+  padding: 0.5rem 0.8rem;
+  border-radius: 0 6px 6px 0;
+  line-height: 1.7;
+}
+
+/* ======================================================
+   GLOBAL NAV + CHROME
+   ====================================================== */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  background: var(--red);
+  width: 0%;
+  z-index: 200;
+  transition: width 0.3s ease;
+}
+
+.nav-dots {
+  position: fixed;
+  right: clamp(0.6rem, 1.5vw, 1.25rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 200;
+}
+
+.nd {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  padding: 0;
+  position: relative;
+}
+
+.nd.active { background: var(--red); transform: scale(1.5); }
+
+/* Nav dot tooltip — appears to the left on hover */
+.nd::before {
+  content: attr(data-title);
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(10,10,15,0.96);
+  color: var(--text-hi);
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border: 1px solid rgba(255,255,255,0.12);
+  z-index: 300;
+}
+.nd:hover::before { opacity: 1; }
+
+/* ToC card interactive */
+.toc-card { cursor: pointer; transition: border-color 0.2s, transform 0.15s !important; }
+.toc-card:hover { border-color: rgba(235,10,30,0.45) !important; transform: translateY(-2px) !important; }
+.toc-range { font-size: var(--f-label); color: var(--text-dim); margin-top: auto; padding-top: 0.4rem; }
+
+.keyboard-hint {
+  position: fixed;
+  bottom: 1rem;
+  right: clamp(1.5rem, 3vw, 2.5rem);
+  font-size: var(--f-label);
+  color: rgba(255,255,255,0.18);
+  z-index: 200;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ======================================================
+   REVEAL ANIMATIONS
+   ====================================================== */
+.rv {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.slide.active .rv                { opacity: 1; transform: translateY(0); }
+.slide.active .rv:nth-child(1)   { transition-delay: 0.04s; }
+.slide.active .rv:nth-child(2)   { transition-delay: 0.10s; }
+.slide.active .rv:nth-child(3)   { transition-delay: 0.16s; }
+.slide.active .rv:nth-child(4)   { transition-delay: 0.22s; }
+.slide.active .rv:nth-child(5)   { transition-delay: 0.28s; }
+.slide.active .rv:nth-child(6)   { transition-delay: 0.34s; }
+.slide.active .rv:nth-child(7)   { transition-delay: 0.40s; }
+.slide.active .rv:nth-child(8)   { transition-delay: 0.46s; }
+.slide.active .rv:nth-child(9)   { transition-delay: 0.52s; }
+.slide.active .rv:nth-child(10)  { transition-delay: 0.58s; }
+
+/* ======================================================
+   RESPONSIVE BREAKPOINTS — height-based
+   ====================================================== */
+@media (max-height: 700px) {
+  :root {
+    --pad: clamp(1rem, 3vw, 2.5rem);
+    --gap: clamp(0.5rem, 1.1vw, 0.95rem);
+    --f-giant: clamp(2rem, 5vw, 4rem);
+    --f-h2: clamp(1.2rem, 2.5vw, 1.9rem);
+  }
+}
+
+@media (max-height: 600px) {
+  :root {
+    --pad: clamp(0.7rem, 2.5vw, 1.8rem);
+    --gap: clamp(0.35rem, 0.9vw, 0.7rem);
+    --f-giant: clamp(1.6rem, 4vw, 3rem);
+    --f-h2: clamp(1rem, 2vw, 1.5rem);
+    --f-body: clamp(0.7rem, 1.1vw, 0.85rem);
+  }
+  .nav-dots, .keyboard-hint { display: none; }
+}
+
+@media (max-height: 500px) {
+  :root {
+    --pad: clamp(0.5rem, 2vw, 1.2rem);
+    --f-h2: clamp(0.9rem, 1.8vw, 1.25rem);
+  }
+}
+
+@media (max-width: 700px) {
+  .two-col, .scope-grid { grid-template-columns: 1fr; }
+  .arch-flow { flex-direction: column; }
+  .arch-arrow { transform: rotate(90deg); align-self: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1; transform: none; transition: none; }
+  .progress-bar { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Chrome ──────────────────────────────────────────────────── -->
+<div class="progress-bar" id="pb"></div>
+<nav class="nav-dots" id="dots"></nav>
+<div class="keyboard-hint">↑ ↓ / ← →</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 01 — TITLE
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide s-title" data-slide="1">
+  <div class="slide-meta">
+    <span class="section-label">Toyota / TEMA Research</span>
+    <span class="slide-num">01 / 24</span>
+  </div>
+  <div class="slide-content">
+    <p class="rv" style="font-size:var(--f-label);letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);font-weight:700;">Prototype v0.1 · March 2026</p>
+    <div class="rv giant" style="margin-top:.4rem;">
+      UAM Corridor<br><span class="red">Simulation</span>
+    </div>
+    <div class="rv divider" style="margin-top:.6rem;"></div>
+    <p class="rv subtitle" style="max-width:42rem;">
+      Communication &amp; traffic performance modeling for the SF–San Jose air corridor.<br>
+      AI-assisted prototype: conversation → PRD → working code.
+    </p>
+    <p class="rv" style="font-size:var(--f-body);color:var(--text-dim);margin-top:.5rem;">
+      Yanbing Wang (ASU) &nbsp;·&nbsp; Toyota ITL &nbsp;·&nbsp; Made with Claude Code
+    </p>
+  </div>
+  <div class="slide-footer">For internal research use — Toyota ITL / ASU collaboration 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 02 — TABLE OF CONTENTS
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="2">
+  <div class="slide-meta">
+    <span class="section-label">Navigation</span>
+    <span class="slide-num">02 / 25</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Table of Contents</h2>
+    <div class="rv divider"></div>
+    <!-- 4-column grid, 2 rows — each card is a clickable section link -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap-sm);margin-top:.2rem;">
+      <div class="card toc-card rv" data-goto="2">
+        <div class="card-tag">01</div>
+        <h3>Introduction</h3>
+        <p>Objective, problem definition, scope</p>
+        <div class="toc-range">Slides 03–05</div>
+      </div>
+      <div class="card toc-card rv" data-goto="5">
+        <div class="card-tag blue">02</div>
+        <h3>Architecture</h3>
+        <p>System design, global assumptions</p>
+        <div class="toc-range">Slides 06–07</div>
+      </div>
+      <div class="card toc-card rv" data-goto="7">
+        <div class="card-tag green">03</div>
+        <h3>Modeling</h3>
+        <p>UAM dynamics, car-following, comm network</p>
+        <div class="toc-range">Slides 08–12</div>
+      </div>
+      <div class="card toc-card rv" data-goto="12">
+        <div class="card-tag amber">04</div>
+        <h3>Control Modes</h3>
+        <p>HOTL vs HWTL, switching logic</p>
+        <div class="toc-range">Slides 13–14</div>
+      </div>
+      <div class="card toc-card rv" data-goto="14">
+        <div class="card-tag purple">05</div>
+        <h3>KPI Definitions</h3>
+        <p>Safety metrics, formulas, dependency pipeline</p>
+        <div class="toc-range">Slides 15–17</div>
+      </div>
+      <div class="card toc-card hl rv" data-goto="17">
+        <div class="card-tag">06</div>
+        <h3>Scenarios</h3>
+        <p>4 prototype experiments and results</p>
+        <div class="toc-range">Slides 18–22</div>
+      </div>
+      <div class="card toc-card rv" data-goto="22">
+        <div class="card-tag blue">07</div>
+        <h3>Validation &amp; Roadmap</h3>
+        <p>External data needs, next steps</p>
+        <div class="toc-range">Slides 23–24</div>
+      </div>
+      <div class="card toc-card rv" data-goto="24">
+        <div class="card-tag" style="color:var(--text-dim)">08</div>
+        <h3>Appendix</h3>
+        <p>Key equations, parameter table</p>
+        <div class="toc-range">Slide 25</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 03 — OBJECTIVE & AI WORKFLOW
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="2">
+  <div class="slide-meta">
+    <span class="section-label">Context</span>
+    <span class="slide-num">02 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Objective &amp; AI-Assisted Workflow</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>Objective:</strong> discrete-time simulation to quantify how UAM density, BS layout, and control mode jointly affect communication KPIs and safety separation margins.</li>
+      <li><strong>Workflow:</strong> natural-language conversation with Claude Code → Product Requirements Document → production Python code + interactive HTML reports — no manual coding.</li>
+      <li><strong>Stack:</strong> pure Python simulation engine · self-contained HTML reports · zero external libraries for visualization.</li>
+      <li><strong>Status:</strong> 4 parameterized scenarios run end-to-end; classification logic (NORMAL / DEGRADED / UNSAFE) validated against design thresholds.</li>
+    </ul>
+    <div class="rv card-grid" style="grid-template-columns:repeat(3,1fr);margin-top:.3rem;">
+      <div class="card">
+        <div class="card-tag">Step 1</div>
+        <h3>Conversation</h3>
+        <p>Domain requirements discussed in natural language with Claude Code</p>
+      </div>
+      <div class="card">
+        <div class="card-tag">Step 2</div>
+        <h3>PRD</h3>
+        <p>Structured product-requirements document auto-generated and iterated</p>
+      </div>
+      <div class="card hl">
+        <div class="card-tag">Step 3</div>
+        <h3>Code + Reports</h3>
+        <p>Simulation engine, scenario configs, and interactive HTML reports</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 03 — PROBLEM DEFINITION
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="3">
+  <div class="slide-meta">
+    <span class="section-label">Problem Definition</span>
+    <span class="slide-num">03 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Use Case &amp; Key Questions</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>Target scenario:</strong> urban air mobility corridor, SF to San Jose (~80 km), modeled as a single lane at cruise altitude for the prototype.</li>
+      <li><strong>Q1 — Capacity:</strong> how do UAM density and BS layout affect base-station utilization and communication latency (RTT)?</li>
+      <li><strong>Q2 — Safety coupling:</strong> at what communication load does packet loss or RTT growth begin to compromise minimum safe separation margins?</li>
+      <li><strong>Q3 — Mode sensitivity:</strong> how does switching pilots from automated (HOTL) to manual-control (HWTL) video streaming change BS load — and when does concurrent HWTL tip the network into overload?</li>
+      <li><strong>Q4 — Shared infrastructure:</strong> can ground-user surges (stadium events, concerts) cause cascading failures on shared 5G towers even when UAM demand alone is manageable?</li>
+    </ul>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 04 — SCOPE
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="4">
+  <div class="slide-meta">
+    <span class="section-label">Problem Definition</span>
+    <span class="slide-num">04 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">In / Out of Scope — Prototype v0.1</h2>
+    <div class="rv divider"></div>
+    <div class="rv scope-grid">
+      <div>
+        <div class="scope-hdr in">✓ In Scope</div>
+        <ul class="b">
+          <li>1D corridor, single-lane, 80 km SF–SJ abstraction</li>
+          <li>Discrete-time engine (dt = 1 s, 10-min horizon)</li>
+          <li>M/M/1 queuing model per base station</li>
+          <li>BSM + telemetry + HWTL video traffic sources</li>
+          <li>HOTL ↔ HWTL Poisson mode-switching</li>
+          <li>External terrestrial load injection (configurable)</li>
+          <li>Interactive HTML reports with per-step KPI time series</li>
+        </ul>
+      </div>
+      <div>
+        <div class="scope-hdr out">✗ Out of Scope</div>
+        <ul class="b">
+          <li>3D corridor geometry &amp; multi-lane physics</li>
+          <li>Physical channel model (pathloss, fading, beamforming)</li>
+          <li>Multi-corridor / network-wide effects</li>
+          <li>Validated UAM aerodynamic limits <span class="warn">(TBD — Joby)</span></li>
+          <li>Realistic scheduling / resource allocation at BS</li>
+          <li>SF–SJ geography, waypoints, no-fly zones</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 05 — ARCHITECTURE OVERVIEW
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="5">
+  <div class="slide-meta">
+    <span class="section-label">Architecture</span>
+    <span class="slide-num">05 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Simulation Architecture — Block Diagram</h2>
+    <div class="rv divider"></div>
+    <div class="rv arch-flow" style="margin-top:.3rem;">
+      <div class="arch-block hl">
+        <div class="arch-tag">Inputs</div>
+        <div class="arch-title">Scenario Config</div>
+        <div class="arch-items">
+          <span>Corridor layout &amp; length</span>
+          <span>UAM count &amp; speed range</span>
+          <span>BS count &amp; placement</span>
+          <span>Traffic parameters</span>
+          <span>Thresholds</span>
+          <span>Terrestrial load events</span>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block">
+        <div class="arch-tag">Transport Layer</div>
+        <div class="arch-title">UAM Dynamics</div>
+        <div class="arch-items">
+          <span>Position updates (Euler)</span>
+          <span>Car-following / speed ctrl</span>
+          <span>Separation time tracking</span>
+          <span>Mode flag per UAM</span>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block">
+        <div class="arch-tag blue">Comm Layer</div>
+        <div class="arch-title">Network Model</div>
+        <div class="arch-items">
+          <span>Coverage &amp; BS selection</span>
+          <span>Handoff logic</span>
+          <span>M/M/1 queue per BS</span>
+          <span>RTT &amp; drop computation</span>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block">
+        <div class="arch-tag green">Safety Eval</div>
+        <div class="arch-title">KPI Checks</div>
+        <div class="arch-items">
+          <span>Separation vs. threshold</span>
+          <span>RTT vs. 500 ms limit</span>
+          <span>Drop rate vs. 5% limit</span>
+          <span>BS load vs. 85% limit</span>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block">
+        <div class="arch-tag amber">Reports</div>
+        <div class="arch-title">Visualization</div>
+        <div class="arch-items">
+          <span>Interactive HTML report</span>
+          <span>Time-series charts</span>
+          <span>Spatial corridor view</span>
+          <span>Classification verdict</span>
+        </div>
+      </div>
+    </div>
+    <p class="rv subtitle" style="margin-top:.5rem;">One simulation loop per time step: Transport → Comm → Record metrics → Advance time.</p>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 06 — MODELING ASSUMPTIONS
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="6">
+  <div class="slide-meta">
+    <span class="section-label">Modeling</span>
+    <span class="slide-num">06 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Global Modeling Assumptions</h2>
+    <div class="rv divider"></div>
+    <div class="rv">
+      <table class="tbl">
+        <thead>
+          <tr><th>Parameter</th><th>Current Value</th><th>Source / Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Time step dt</td><td><code>1.0 s</code></td><td><span class="badge b-ai">AI default</span></td></tr>
+          <tr><td>Simulation horizon</td><td><code>600 s (10 min)</code></td><td><span class="badge b-ai">AI default</span></td></tr>
+          <tr><td>Corridor model</td><td>1D scalar position x ∈ [0, 80 km]</td><td><span class="badge b-ai">AI default</span> · 3D planned</td></tr>
+          <tr><td>UAM initialization</td><td>Uniform spacing + random speed in [v_min, v_max]</td><td><span class="badge b-ai">AI default</span></td></tr>
+          <tr><td>BS placement</td><td>Uniform grid along corridor, configurable N</td><td><span class="badge b-ai">AI default</span></td></tr>
+          <tr><td>Randomness</td><td>Fixed seed (default 42) — fully reproducible</td><td><span class="badge b-ok">Implemented</span></td></tr>
+          <tr><td>RTT limit</td><td><code>500 ms</code> (from FY26 ASU Proposal)</td><td><span class="badge b-lit">Literature</span></td></tr>
+          <tr><td>Min separation</td><td><code>2–5 s</code> (placeholder)</td><td><span class="badge b-tbd">TBD — Joby</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 07 — TRANSPORT MODEL: STATE & DYNAMICS
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="7">
+  <div class="slide-meta">
+    <span class="section-label">Transport Model</span>
+    <span class="slide-num">07 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">UAM State Representation &amp; Dynamics</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>State per UAM:</strong> position <code>x(t)</code> [m along corridor] · speed <code>v(t)</code> [m/s] · mode flag <code>{HOTL, HWTL}</code> · serving BS ID · handoff flag.</li>
+      <li><strong>Dynamic model:</strong> <span class="badge b-ai">AI default</span> point-mass, discrete-time Euler integration.</li>
+    </ul>
+    <div class="rv formula">
+      x(t+dt) = x(t) + v(t)·dt<br>
+      v(t+dt) = clip( v(t) + a(t)·dt,  v_min, v_max )
+    </div>
+    <ul class="b rv">
+      <li><strong>Acceleration:</strong> computed by car-following rule below; max accel/decel currently unconstrained — <span class="warn">needs Joby aero envelope input.</span></li>
+      <li><strong>Wrap-around:</strong> UAM reaching end of corridor is reset to origin (prototype convenience; will be replaced by hub arrival logic).</li>
+    </ul>
+    <div class="rv" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.1rem;">
+      <span class="badge b-ai">Point mass — AI default</span>
+      <span class="badge b-tbd">Aero limits TBD — Joby</span>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 08 — TRANSPORT MODEL: CAR-FOLLOWING
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="8">
+  <div class="slide-meta">
+    <span class="section-label">Transport Model</span>
+    <span class="slide-num">08 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Car-Following &amp; Separation Logic</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>Rule:</strong> simplified time-gap following (not IDM) — chosen for clarity; IDM or OVM are drop-in replacements.</li>
+    </ul>
+    <div class="rv formula">
+      T_sep = (x_leader − x_follower) / v_follower<br><br>
+      if T_sep &lt; T_sep_min:<br>
+      &nbsp;&nbsp;  v_follower → min(v_follower, v_leader)   # yield
+    </div>
+    <ul class="b rv">
+      <li><strong>Current threshold T_sep_min:</strong> <code>2–5 s</code> <span class="badge b-ai">AI placeholder</span></li>
+      <li><strong>Known UAM guidance:</strong> reports indicate ~1-minute time gap for automated operations — <span class="warn">60× larger than car norms (1–2 s).</span></li>
+      <li><strong>⚠️ Critical gap:</strong> this parameter dominates safety classification. <span class="warn">Must be updated after Joby input.</span></li>
+    </ul>
+    <div class="rv card-grid" style="grid-template-columns:repeat(3,1fr);margin-top:.2rem;">
+      <div class="card"><div class="card-tag">Car norms</div><h3>1–2 s</h3><p>Typical highway following</p></div>
+      <div class="card hl"><div class="card-tag">Current model</div><h3>2–5 s</h3><p>AI placeholder — prototype</p></div>
+      <div class="card" style="border-color:rgba(245,158,11,0.4)"><div class="card-tag amber">UAM guidance</div><h3>~60 s</h3><p>Reports suggest ~1 min for automated UAM</p></div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 09 — TRANSPORT MODEL: PLANNED ENHANCEMENTS
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="9">
+  <div class="slide-meta">
+    <span class="section-label">Transport Model</span>
+    <span class="slide-num">09 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Planned Enhancements &amp; Diagnostics</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Model Enhancements</div>
+        <ul class="b">
+          <li>Replace Euler with RK4 or validated UAM dynamics model</li>
+          <li>Add max-acceleration / max-deceleration constraints from Joby specs</li>
+          <li>3D lane structure: altitude layers, lateral separation</li>
+          <li>Lane-change and overtake logic between lanes</li>
+          <li>Disturbance injection: wind gusts, emergency divert maneuvers</li>
+          <li>Hub arrival / departure queuing model</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">Diagnostic Plots to Add</div>
+        <ul class="b">
+          <li>Speed vs. time for representative UAMs (individual trajectories)</li>
+          <li>Time–space (Hovmöller) diagram — visualize "air traffic jams"</li>
+          <li>Separation time heatmap: UAM pair × time step</li>
+          <li>Acceleration histogram — check physical plausibility</li>
+          <li>Hub utilization over time (arrivals / min)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 10 — COMM MODEL: TOPOLOGY & TRAFFIC
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="10">
+  <div class="slide-meta">
+    <span class="section-label">Communication Model</span>
+    <span class="slide-num">10 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Network Topology &amp; Traffic Sources</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Network Topology</div>
+        <ul class="b">
+          <li><strong>BSs modeled as nodes</strong> in a directed attribute graph G(t); edges carry RTT and link quality.</li>
+          <li><strong>Placement:</strong> uniform grid along corridor, configurable count N (default 16 over 80 km ≈ 4.7 km spacing).</li>
+          <li><strong>Coverage tiers:</strong> "good" ≤ 3 km · "degraded" ≤ 6 km · "none" beyond.</li>
+          <li><strong>BS selection:</strong> UAM attaches to nearest BS within coverage; hysteresis (20% of good-radius) prevents ping-pong handoffs.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">Traffic Sources</div>
+        <ul class="b">
+          <li><strong>HOTL telemetry:</strong> BSM 300 B @ 10 Hz + telemetry stream = <code>35 kbps/UAM</code></li>
+          <li><strong>HWTL video:</strong> live pilot video + C2 commands = <code>+6 Mbps/UAM</code> during episode</li>
+          <li><strong>Terrestrial surge:</strong> configurable extra load per BS, time-windowed — models concurrent smartphone traffic from nearby events.</li>
+          <li><strong>Total arrival rate per BS:</strong> Σ UAM rates + external load → feeds M/M/1 queue.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 11 — COMM MODEL: LOAD, LATENCY & HANDOFF
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="11">
+  <div class="slide-meta">
+    <span class="section-label">Communication Model</span>
+    <span class="slide-num">11 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Load, Latency &amp; Handoff Model</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>BS utilization:</strong> <code>ρ = arrival_rate / capacity</code> (M/M/1 utilization ratio).</li>
+    </ul>
+    <div class="rv formula">
+      W_queue = L_min / (1 − ρ)     # M/M/1 mean waiting time; → ∞ as ρ → 1<br>
+      RTT = 2 × (d/c  +  W_queue  +  0.01)  +  0.1 if in_handoff
+    </div>
+    <ul class="b rv">
+      <li><strong>Drop model:</strong> messages exceeding buffer capacity (<code>buffer_capacity_msgs</code>) are dropped; handoff period adds 10% drop probability.</li>
+      <li><strong>Threshold zones:</strong> <span class="warn">ρ &gt; 0.60 → Warning</span> · <span class="bad">ρ &gt; 0.85 → Critical</span></li>
+      <li><strong>Handoff:</strong> triggered when UAM exits hysteresis zone; 200 ms delay + 10% drop; new BS edge created in graph.</li>
+      <li><strong>Planned refinements:</strong> realistic channel model (pathloss / shadowing) · Toyota / Joby 5G capacity specs · scheduling model beyond M/M/1.</li>
+    </ul>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 12 — CONTROL MODES: DEFINITION & SWITCHING
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="12">
+  <div class="slide-meta">
+    <span class="section-label">Control Modes</span>
+    <span class="slide-num">12 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Human-over-loop vs. Human-within-loop</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div class="card" style="border-color:rgba(96,165,250,0.35)">
+        <div class="card-tag blue">HOTL — Human Over the Loop</div>
+        <ul class="b" style="margin-top:.3rem;">
+          <li>Automation manages flight; human monitors only</li>
+          <li>Low bandwidth: <strong>35 kbps</strong> telemetry stream</li>
+          <li>Default operating mode in simulation</li>
+          <li>Baseline ρ per BS ≈ 3% (manageable)</li>
+        </ul>
+      </div>
+      <div class="card hl">
+        <div class="card-tag">HWTL — Human Within the Loop</div>
+        <ul class="b" style="margin-top:.3rem;">
+          <li>Human actively pilots via live video feed</li>
+          <li>High bandwidth: <strong>+6 Mbps</strong> video + commands</li>
+          <li>Triggered by Poisson process or zone-based rule</li>
+          <li>Duration: exponential(mean_duration_s)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rv">
+      <div class="col-label" style="margin-bottom:.4rem;">Mode Switching Logic</div>
+      <ul class="b">
+        <li><strong>Poisson model:</strong> each UAM switches HOTL→HWTL at rate λ/hr; episode duration ∼ Exp(mean_hwtl_s); returns to HOTL after episode.</li>
+        <li><strong>Zone-based trigger:</strong> switch probability ↑ near departure/arrival hubs (configurable, not active in baseline).</li>
+        <li>Parameters: λ, mean_hwtl_duration_s, max_concurrent_hwtl (all configurable per scenario).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 13 — CONTROL MODES: SAFETY IMPACT
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="13">
+  <div class="slide-meta">
+    <span class="section-label">Control Modes</span>
+    <span class="slide-num">13 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Mode Impact on Communication &amp; Safety</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>Single HWTL event on a 20 Mbps BS:</strong> load jumps from ~3% → ~33% per HWTL aircraft. Two concurrent HWTL events → 63% (warning zone); three → 93% (critical zone).</li>
+      <li><strong>Non-linear M/M/1 effect:</strong> as ρ → 1, queue delay W = L/(1−ρ) grows without bound — RTT can reach seconds even with moderate UAM counts.</li>
+      <li><strong>Safety coupling:</strong> RTT &gt; 500 ms → pilot commands may expire before delivery → HWTL becomes unsafe; simulation flags this as <span class="bad">UNSAFE</span>.</li>
+      <li><strong>Classification impact:</strong> drop rate &gt; 5% OR any BS spending &gt; 10% of run time in critical zone → <span class="warn">DEGRADED</span>; separation violation OR RTT &gt; 500 ms → <span class="bad">UNSAFE</span>.</li>
+    </ul>
+    <div class="rv card-grid" style="grid-template-columns:repeat(3,1fr);margin-top:.3rem;">
+      <div class="card"><div class="card-tag blue">0 HWTL / BS</div><h3>ρ ≈ 3%</h3><p>Pure HOTL baseline — comfortable</p></div>
+      <div class="card" style="border-color:rgba(245,158,11,0.4)"><div class="card-tag amber">2 HWTL / BS</div><h3>ρ ≈ 63%</h3><p>Warning zone — queue building</p></div>
+      <div class="card hl"><div class="card-tag">3 HWTL + surge</div><h3>ρ = 100%</h3><p>Critical — RTT → seconds</p></div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 14 — KPI DEFINITIONS (Part 1)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="14">
+  <div class="slide-meta">
+    <span class="section-label">KPI Definitions</span>
+    <span class="slide-num">14 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">KPI Definitions — Safety-Critical Metrics</h2>
+    <div class="rv divider"></div>
+    <div class="rv">
+      <table class="tbl">
+        <thead>
+          <tr><th>KPI</th><th>Definition / Formula</th><th>Threshold</th><th>Violation ⟹</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Min Separation Time</td>
+            <td><code>T_sep = gap / v_follower</code> · min across all UAM pairs in lane</td>
+            <td>≥ 2 s <span class="badge b-tbd">TBD Joby</span></td>
+            <td><span class="badge b-bad">UNSAFE</span></td>
+          </tr>
+          <tr>
+            <td>Mean / Max RTT</td>
+            <td><code>2×(prop_delay + W_queue + 10ms)</code> + 100ms if in handoff</td>
+            <td>≤ 500 ms <span class="badge b-lit">ASU Proposal</span></td>
+            <td><span class="badge b-bad">UNSAFE</span></td>
+          </tr>
+          <tr>
+            <td>Message Drop Rate</td>
+            <td><code>Σ dropped / (dropped + processed)</code> over run</td>
+            <td>&lt; 5%</td>
+            <td><span class="badge b-warn">DEGRADED</span></td>
+          </tr>
+          <tr>
+            <td>Separation Violations</td>
+            <td>Count of steps where any T_sep &lt; threshold</td>
+            <td>= 0 (zero tolerance)</td>
+            <td><span class="badge b-bad">UNSAFE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 15 — KPI DEFINITIONS (Part 2)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="15">
+  <div class="slide-meta">
+    <span class="section-label">KPI Definitions</span>
+    <span class="slide-num">15 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">KPI Definitions — Infrastructure Metrics</h2>
+    <div class="rv divider"></div>
+    <div class="rv">
+      <table class="tbl">
+        <thead>
+          <tr><th>KPI</th><th>Definition / Formula</th><th>Threshold</th><th>Violation ⟹</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Peak BS Load (ρ)</td>
+            <td><code>max_t(arrival_rate_t / capacity)</code> per BS</td>
+            <td>&lt; 85%</td>
+            <td><span class="badge b-warn">DEGRADED</span></td>
+          </tr>
+          <tr>
+            <td>BS Time in Red</td>
+            <td>Fraction of steps where BS ρ &gt; 85%</td>
+            <td>&lt; 10% of run</td>
+            <td><span class="badge b-warn">DEGRADED</span></td>
+          </tr>
+          <tr>
+            <td>Queue Delay (W)</td>
+            <td><code>L_min / (1 − ρ)</code> · M/M/1 mean sojourn time</td>
+            <td>Feeds RTT check</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Mode Switches</td>
+            <td>Total HOTL↔HWTL transitions over run</td>
+            <td>Observational</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>No-Coverage Count</td>
+            <td>UAM-steps with no serving BS</td>
+            <td>= 0 (zero tol.)</td>
+            <td><span class="badge b-bad">UNSAFE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rv" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem;">
+      <span class="badge b-bad">UNSAFE</span><span style="font-size:var(--f-small);color:var(--text-dim);align-self:center;">separation or RTT violation</span>
+      <span class="badge b-warn">DEGRADED</span><span style="font-size:var(--f-small);color:var(--text-dim);align-self:center;">BS overload or drop rate &gt;5%</span>
+      <span class="badge b-ok">NORMAL</span><span style="font-size:var(--f-small);color:var(--text-dim);align-self:center;">all checks pass</span>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 16 — KPI DEPENDENCY PIPELINE
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="16">
+  <div class="slide-meta">
+    <span class="section-label">KPI Definitions</span>
+    <span class="slide-num">16 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Input → KPI Dependency Pipeline</h2>
+    <div class="rv divider"></div>
+    <div class="rv pipeline">
+      <div class="pipeline-row">
+        <div class="p-box knob">UAM density &amp; speed</div>
+        <div class="p-arrow">·</div>
+        <div class="p-box knob">BS layout &amp; capacity</div>
+        <div class="p-arrow">·</div>
+        <div class="p-box knob">Traffic params (HOTL/HWTL)</div>
+        <div class="p-arrow">·</div>
+        <div class="p-box inp">External load events</div>
+      </div>
+      <div class="p-down">↓</div>
+      <div class="pipeline-row">
+        <div class="p-box mid">Per-UAM arrival rate → BS utilization ρ = λ / μ</div>
+      </div>
+      <div class="p-down">↓ M/M/1</div>
+      <div class="pipeline-row">
+        <div class="p-box mid">Queue delay W = L_min / (1−ρ)</div>
+        <div class="p-arrow">+</div>
+        <div class="p-box mid">UAM positions → pairwise gaps</div>
+      </div>
+      <div class="p-down">↓</div>
+      <div class="pipeline-row">
+        <div class="p-box crit">RTT &amp; Drop Rate</div>
+        <div class="p-arrow">+</div>
+        <div class="p-box crit">Separation Time T_sep</div>
+      </div>
+      <div class="p-down">↓</div>
+      <div class="pipeline-row">
+        <div class="p-box safe">Safety Classification: NORMAL / DEGRADED / UNSAFE</div>
+      </div>
+    </div>
+    <div class="rv" style="display:flex;gap:.6rem;margin-top:.4rem;flex-wrap:wrap;">
+      <span class="badge b-lit">Design knobs</span><span style="font-size:var(--f-small);color:var(--text-dim);align-self:center;">= UAM density, BS placement, capacity</span>
+      <span class="badge b-ai" style="margin-left:.5rem;">Uncertain inputs</span><span style="font-size:var(--f-small);color:var(--text-dim);align-self:center;">= demand surges, random ICs</span>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 17 — SCENARIOS OVERVIEW
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="17">
+  <div class="slide-meta">
+    <span class="section-label">Experiments</span>
+    <span class="slide-num">17 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Four Prototype Scenarios</h2>
+    <div class="rv divider"></div>
+    <div class="rv">
+      <table class="tbl">
+        <thead>
+          <tr><th>Scenario</th><th>UAMs</th><th>BS Config</th><th>Special</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 · Baseline</td>
+            <td>50</td>
+            <td>16 × 100 Mbps</td>
+            <td>Default parameters</td>
+            <td><span class="badge b-ok">NORMAL</span></td>
+          </tr>
+          <tr>
+            <td>2 · High Density</td>
+            <td>150</td>
+            <td>16 × 50 Mbps, 2 lanes</td>
+            <td>Buffer overflow near SJ hub</td>
+            <td><span class="badge b-bad">UNSAFE</span></td>
+          </tr>
+          <tr>
+            <td>3 · Frequent Switches</td>
+            <td>80</td>
+            <td>16 × 100 Mbps</td>
+            <td>λ = 5 switches/UAM/hr</td>
+            <td><span class="badge b-ok">NORMAL</span></td>
+          </tr>
+          <tr>
+            <td>4 · Cascade Failure</td>
+            <td>60</td>
+            <td>6 × 20 Mbps</td>
+            <td>+8 Mbps terrestrial surge t=120–360 s</td>
+            <td><span class="badge b-bad">UNSAFE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="b rv" style="margin-top:.3rem;">
+      <li>Each scenario produces an interactive HTML report with time-series plots, threshold lines, per-BS load charts, and a classification rationale table.</li>
+      <li>A combined comparison report overlays all four scenarios.</li>
+    </ul>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 18 — SCENARIO 1: BASELINE
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="18">
+  <div class="slide-meta">
+    <span class="section-label">Scenario 1</span>
+    <span class="slide-num">18 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Baseline — 50 UAMs, Low Density</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Configuration</div>
+        <ul class="b">
+          <li>50 UAMs · uniform distribution</li>
+          <li>16 BS × 100 Mbps · 4.7 km spacing</li>
+          <li>Speed 40–60 m/s · T_sep_min = 5 s</li>
+          <li>HOTL mode · λ = 0.5 switches/UAM/hr</li>
+          <li>No external load</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">Results</div>
+        <ul class="b">
+          <li><span class="ok">✓</span> Min separation: <strong>3.3 s</strong> ≥ 2.0 s threshold</li>
+          <li><span class="ok">✓</span> Max RTT: <strong>131 ms</strong> ≤ 500 ms</li>
+          <li><span class="ok">✓</span> Drop rate: <strong>0.09%</strong> &lt; 5%</li>
+          <li><span class="ok">✓</span> Peak BS load: <strong>29%</strong> &lt; 85%</li>
+          <li><span class="ok">✓</span> Mode switches: 12 (all absorbed)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rv" style="display:flex;align-items:center;gap:.8rem;margin-top:.3rem;">
+      <div class="verdict v-ok">✓ NORMAL — All 6 safety checks pass</div>
+    </div>
+    <ul class="b rv">
+      <li><strong>Why safe:</strong> demand well within BS capacity (peak ρ = 29%); UAMs spaced at 3.3 s headway; HWTL episodes absorbed with comfortable bandwidth margin.</li>
+    </ul>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 19 — SCENARIO 2: HIGH DENSITY
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="19">
+  <div class="slide-meta">
+    <span class="section-label">Scenario 2</span>
+    <span class="slide-num">19 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">High Density — 150 UAMs</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Configuration (changed params)</div>
+        <ul class="b">
+          <li>150 UAMs (3×) · 2 lanes</li>
+          <li>16 BS × 50 Mbps (halved)</li>
+          <li>T_sep_min = 3 s · seed 123</li>
+        </ul>
+        <div class="col-label" style="margin-top:.5rem;">Root Cause</div>
+        <ul class="b">
+          <li>BS16 (near SJ hub) serves <strong>56 UAMs</strong> at peak vs. ~9 by design — geographic bunching near destination.</li>
+          <li>56 UAMs × 20 msgs/step = <strong>1,120 msgs/step</strong> &gt;&gt; 300-msg buffer → 73% local drop rate.</li>
+          <li>Aircraft bunching → headway shrinks to <strong>1.5 s</strong> &lt; 2.0 s threshold.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">Results</div>
+        <ul class="b">
+          <li><span class="bad">✗</span> Min separation: <strong>1.5 s</strong> &lt; 2.0 s</li>
+          <li><span class="ok">✓</span> Max RTT: 134 ms (OK — bandwidth not saturated)</li>
+          <li><span class="bad">✗</span> Drop rate: <strong>13%</strong> &gt; 5%</li>
+          <li><span class="ok">✓</span> Peak BS load: 29% bandwidth <em>(but buffer overflow)</em></li>
+          <li><span class="bad">✗</span> Sep violations: 3,113 steps</li>
+        </ul>
+        <div class="verdict v-bad" style="margin-top:.5rem;">✗ UNSAFE — Buffer overflow + separation</div>
+      </div>
+    </div>
+    <ul class="b rv">
+      <li><strong>Key insight:</strong> bandwidth utilization looks healthy (29%) while the system is actually failing — bottleneck is the <em>message buffer</em>, not bandwidth. Diagnosis requires looking at both metrics.</li>
+    </ul>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 20 — SCENARIO 3: FREQUENT SWITCHES (brief)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="20">
+  <div class="slide-meta">
+    <span class="section-label">Scenario 3</span>
+    <span class="slide-num">20 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Frequent Switches — λ = 5/UAM/hr</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>Config change:</strong> 80 UAMs · λ = 5 switches/UAM/hr (10× baseline) · mean HWTL duration = 45 s · seed 777.</li>
+      <li><strong>Expected load:</strong> E[concurrent HWTL/BS] = (5/3600) × 45 × (80/16) ≈ 3 → adds ~18 Mbps to each 100 Mbps BS → ρ ≈ 18% additional → total ρ ≈ 21% (warning zone never reached).</li>
+    </ul>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Results</div>
+        <ul class="b">
+          <li><span class="ok">✓</span> Min separation: <strong>3.3 s</strong></li>
+          <li><span class="ok">✓</span> Max RTT: <strong>132 ms</strong></li>
+          <li><span class="ok">✓</span> Drop rate: <strong>1.42%</strong></li>
+          <li><span class="ok">✓</span> Peak BS load: &lt; 30%</li>
+          <li>Mode switches: <strong>96</strong> (all absorbed)</li>
+        </ul>
+        <div class="verdict v-ok" style="margin-top:.5rem;">✓ NORMAL — Infrastructure sized for HWTL</div>
+      </div>
+      <div>
+        <div class="col-label">Why it passes</div>
+        <ul class="b">
+          <li>Pilot takeovers are frequent but the corridor is not crowded — 5 UAMs/BS average.</li>
+          <li>100 Mbps BS has headroom specifically for occasional HWTL video bursts.</li>
+          <li>Demonstrates that high switch rate alone is not unsafe — <strong>it is the combination with insufficient infrastructure that matters.</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 21 — SCENARIO 4: CASCADE FAILURE
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="21">
+  <div class="slide-meta">
+    <span class="section-label">Scenario 4</span>
+    <span class="slide-num">21 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Cascade Failure — Terrestrial Surge</h2>
+    <div class="rv divider"></div>
+    <ul class="b rv">
+      <li><strong>Config:</strong> 60 UAMs · 6 BS × 20 Mbps · λ = 8/hr · mean HWTL = 90 s · terrestrial surge +8 Mbps/BS at t = 120–360 s.</li>
+      <li><strong>Math:</strong> E[concurrent HWTL/BS] = (8/3600)×90×10 ≈ 2 → 2×6 Mbps = 12 Mbps → ρ = 60%. Add +8 Mbps → 20 Mbps → ρ = 100% → M/M/1 saturated.</li>
+    </ul>
+    <div class="rv">
+      <div class="col-label" style="margin-bottom:.3rem;">Phase Progression</div>
+      <div class="phase-bar" style="margin-bottom:.4rem;">
+        <div class="ph" style="flex:2;background:var(--green);" title="t=0-60s Pure HOTL"></div>
+        <div class="ph" style="flex:1;background:var(--amber);" title="t=60-120s HWTL building"></div>
+        <div class="ph" style="flex:4;background:var(--rose);" title="t=120-360s Terrestrial surge"></div>
+        <div class="ph" style="flex:2;background:var(--amber);" title="t=360-480s Surge ends"></div>
+        <div class="ph" style="flex:2;background:var(--green);" title="t=480-600s Full recovery"></div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;font-size:var(--f-label);color:var(--text-dim);">
+        <span>🟢 t=0–60s Pure HOTL (ρ≈3%)</span>
+        <span>🟡 t=60–120s HWTL accumulate (ρ→63%)</span>
+        <span>🔴 t=120–360s Surge (ρ=100%)</span>
+        <span>🟡 t=360–480s Surge ends</span>
+        <span>🟢 t=480–600s Recovery</span>
+      </div>
+    </div>
+    <ul class="b rv">
+      <li><span class="bad">✗</span> Max RTT: <strong>4,120 ms</strong> (&gt;&gt; 500 ms) · All 6 BS hit 100% load · BS time in red: 10–31% of run.</li>
+    </ul>
+    <div class="rv verdict v-bad">✗ UNSAFE — RTT 8× safety limit · shared infrastructure failure</div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 22 — VALIDATION PLAN
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="22">
+  <div class="slide-meta">
+    <span class="section-label">Validation</span>
+    <span class="slide-num">22 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Validation Plan &amp; External Data Needs</h2>
+    <div class="rv divider"></div>
+    <div class="rv">
+      <table class="tbl">
+        <thead>
+          <tr><th>Parameter / Module</th><th>Current Value</th><th>Source Needed</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Min separation time</td>
+            <td>2–5 s <span class="badge b-ai">AI</span></td>
+            <td>Joby Aircraft</td>
+            <td>Dominates safety classification</td>
+          </tr>
+          <tr>
+            <td>Max accel / decel</td>
+            <td>Unconstrained <span class="badge b-ai">AI</span></td>
+            <td>Joby Aircraft</td>
+            <td>Car-following physical limits</td>
+          </tr>
+          <tr>
+            <td>BS capacity / RAN model</td>
+            <td>20–100 Mbps flat <span class="badge b-ai">AI</span></td>
+            <td>Toyota / TEMA 5G specs</td>
+            <td>Entire M/M/1 load model</td>
+          </tr>
+          <tr>
+            <td>RTT / drop threshold</td>
+            <td>500 ms <span class="badge b-lit">ASU Proposal</span></td>
+            <td>FlyMobility / Joby ops</td>
+            <td>HWTL safety envelope</td>
+          </tr>
+          <tr>
+            <td>Terrestrial traffic model</td>
+            <td>Step function <span class="badge b-ai">AI</span></td>
+            <td>Telecom traffic data</td>
+            <td>Cascade failure fidelity</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="b rv" style="margin-top:.3rem;">
+      <li><strong>Already read:</strong> FY26 ASU Proposal (graph formulation, RTT), CascadeFailureScenario.docx (M/M/1 model), Boeing UAM ConOps, Safety Metrics PDF.</li>
+      <li><strong>Next contact:</strong> Joby — aircraft dynamics envelope · FlyMobility — operational HWTL latency requirements.</li>
+    </ul>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 23 — ROADMAP
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="23">
+  <div class="slide-meta">
+    <span class="section-label">Roadmap</span>
+    <span class="slide-num">23 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Roadmap &amp; Joint Deep-Dive Topics</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Proposed Joint Sessions</div>
+        <ul class="b">
+          <li><strong>Transport layer:</strong> UAM initialization, dynamics model limits (accel/decel), disturbance scenario design, time-space diagram interpretation.</li>
+          <li><strong>Comm layer:</strong> BS placement strategy, realistic channel model, M/M/1 → realistic scheduler, terrestrial traffic model.</li>
+          <li><strong>Cross-layer coupling:</strong> mapping RTT / drop rate to safety margin; HWTL trigger criteria; multi-objective threshold design.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">Planned Evolution</div>
+        <div class="card-grid" style="grid-template-columns:1fr;gap:.35rem;">
+          <div class="card"><div class="card-tag">Phase 1 — Now</div><h3>1D corridor, AI defaults, 4 scenarios</h3></div>
+          <div class="card hl2"><div class="card-tag blue">Phase 2</div><h3>Validated sub-models — Joby &amp; Toyota specs</h3></div>
+          <div class="card"><div class="card-tag amber">Phase 3</div><h3>SF–SJ geography: waypoints, no-fly zones</h3></div>
+          <div class="card"><div class="card-tag purple">Phase 4</div><h3>Multi-lane 3D corridors, network-level effects</h3></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 24 — APPENDIX / KEY EQUATIONS
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide" data-slide="24">
+  <div class="slide-meta">
+    <span class="section-label">Appendix</span>
+    <span class="slide-num">24 / 24</span>
+  </div>
+  <div class="slide-content">
+    <h2 class="rv">Appendix — Key Equations &amp; Default Parameters</h2>
+    <div class="rv divider"></div>
+    <div class="rv two-col">
+      <div>
+        <div class="col-label">Core Equations</div>
+        <div class="formula" style="margin-bottom:.5rem;">
+          <!-- UAM dynamics -->
+          x(t+dt) = x(t) + v(t)·dt<br>
+          v(t+dt) = clip(v + a·dt, v_min, v_max)<br><br>
+          <!-- Car-following -->
+          T_sep  = (x_lead − x_follow) / v_follow<br><br>
+          <!-- M/M/1 -->
+          ρ      = arrival_rate / capacity<br>
+          W      = L_min / (1 − ρ)<br><br>
+          <!-- RTT -->
+          RTT    = 2·(d/c + W + 0.01) [+ 0.1 if handoff]<br><br>
+          <!-- Mode switch -->
+          t_switch ~ Exp(λ/3600)   # Poisson inter-arrival<br>
+          dur_HWTL ~ Exp(μ_HWTL)
+        </div>
+      </div>
+      <div>
+        <div class="col-label">Default Parameter Table</div>
+        <table class="tbl">
+          <thead><tr><th>Param</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td>dt</td><td><code>1.0 s</code></td></tr>
+            <tr><td>T_end</td><td><code>600 s</code></td></tr>
+            <tr><td>UAM speed</td><td><code>40–60 m/s</code></td></tr>
+            <tr><td>T_sep_min</td><td><code>5 s</code> <span class="badge b-tbd">TBD</span></td></tr>
+            <tr><td>BS capacity</td><td><code>100 Mbps</code></td></tr>
+            <tr><td>HOTL rate</td><td><code>35 kbps</code></td></tr>
+            <tr><td>HWTL rate</td><td><code>6 Mbps</code></td></tr>
+            <tr><td>RTT limit</td><td><code>500 ms</code></td></tr>
+            <tr><td>λ (default)</td><td><code>0.5/UAM/hr</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">UAM Corridor Simulation · Toyota/TEMA 2026</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT — Navigation, animations, progress
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  const TOTAL = 25;
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const pb = document.getElementById('pb');
+  const dotsContainer = document.getElementById('dots');
+  let current = 0;
+
+  /* Build nav dots — data-title from each slide's h2 for hover tooltip */
+  slides.forEach((slide, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'nd' + (i === 0 ? ' active' : '');
+    const h2 = slide.querySelector('h2');
+    btn.setAttribute('data-title', h2 ? h2.textContent.trim() : 'Slide ' + (i + 1));
+    btn.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    btn.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(btn);
+  });
+
+  const dots = Array.from(dotsContainer.querySelectorAll('.nd'));
+
+  function goTo(idx) {
+    idx = Math.max(0, Math.min(TOTAL - 1, idx));
+    current = idx;
+    slides[idx].scrollIntoView({ behavior: 'smooth' });
+    updateChrome(idx);
+  }
+
+  function updateChrome(idx) {
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    pb.style.width = ((idx + 1) / TOTAL * 100) + '%';
+  }
+
+  /* Expose goTo for external callers */
+  window._deckGoTo = goTo;
+
+  /* ToC card navigation */
+  document.querySelectorAll('.toc-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.getAttribute('data-goto'), 10);
+      if (!isNaN(idx)) goTo(idx);
+    });
+  });
+
+  /* IntersectionObserver — trigger .active & reveal animations */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        const idx = slides.indexOf(entry.target);
+        if (idx !== -1) { current = idx; updateChrome(idx); }
+      }
+    });
+  }, { threshold: 0.55 });
+
+  slides.forEach(s => observer.observe(s));
+
+  /* Keyboard navigation */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') {
+      e.preventDefault(); goTo(current + 1);
+    }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault(); goTo(current - 1);
+    }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End')  { e.preventDefault(); goTo(TOTAL - 1); }
+  });
+
+  /* Touch / swipe support */
+  let touchY = 0;
+  document.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dy = touchY - e.changedTouches[0].clientY;
+    if (Math.abs(dy) > 40) goTo(current + (dy > 0 ? 1 : -1));
+  }, { passive: true });
+
+  /* Init first slide */
+  updateChrome(0);
+  slides[0].classList.add('active');
+})();
+</script>
+</body>
+</html>
