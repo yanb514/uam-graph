@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node / JS
+node_modules/
+package-lock.json
+*.js
+
+# Generated outputs
+reports/
+REPORT.pdf
+*.pptx
+*.html
+~$*
+
+# Local tooling / config
+.claude/
+memory/
+
+# Reference documents (internal / proprietary)
+reference/
+
+# Temp / lock files
+*.lock
